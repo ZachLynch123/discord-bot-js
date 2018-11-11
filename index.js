@@ -52,6 +52,7 @@ client.on('message', async msg => {
                 play(msg.guild, queueConstruct.songs[0]);
             } catch(err){
                 console.log(err);
+                queue.delete(msg.guild.id);
                 return msg.channel.send(`Error!: ${err}`);
             }
         } else {
@@ -72,9 +73,9 @@ client.on('message', async msg => {
             dispatcher.setVolumeLogarithmic(5 / 5); */
 
     } else if (msg.content.startsWith(`${PREXIX}stop`)) {
-        console.log("getting this?");
-        msg.voiceChannel.leave();
-        return undefined;
+        console.log(msg.get(voiceChannel));
+        
+        return msg.get(voiceChannel);
     }
 });
 
@@ -98,6 +99,18 @@ play = (guild, song) => {
         
     dispatcher.setVolumeLogarithmic(5 / 5);
 }
+
+/* skip = (guild, song) => {
+    const serverQueue = queue.get(guild.id);
+
+    if (!serverQueue.song[1]) {
+        msg.channel.send("Add more songs to the queue");
+    }
+    const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
+        .on('end', () => {
+            
+        });
+} */
 
 
 client.login(keys.token);

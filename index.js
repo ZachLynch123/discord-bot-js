@@ -60,23 +60,23 @@ client.on('message', async msg => {
             msg.channel.send(`${song.title} added to queue`);
         }
 
-        return undefined;
-
-        /* const dispatcher = connection.playStream(ytdl(args[1])
-            .on('end', () => {
-                console.log('song ended');
-            })
-            .on('error', error => {
-                console.error(error);
-            }));
+        return "playing";
         
-            dispatcher.setVolumeLogarithmic(5 / 5); */
-
     } else if (msg.content.startsWith(`${PREXIX}stop`)) {
-        console.log(msg.get(voiceChannel));
-        
-        return msg.get(voiceChannel);
+        if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
+        if (!serverQueue) return msg.channel.send("Nothing to stop");
+        serverQueue.songs = [];
+        serverQueue.connection.dispatcher.end();
+        return undefined;
     }
+
+    else if (msg.content.startsWith(`${PREXIX}skip`)) {
+        if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
+        if (!serverQueue) return msg.channel.send("Nothing to skip");
+        serverQueue.connection.dispatcher.end();
+        return "skip";
+    }
+
 });
 
 
@@ -93,7 +93,7 @@ play = (guild, song) => {
             console.log('song ended');
             serverQueue.songs.shift();
             play(guild, serverQueue.songs[0]);
-            msg.channel.send(`Now playing: ${song.title}`);
+            msg.channel.send(`Now playing ${song.title}`);
         })
         .on('error', error => {console.error(error);});
         

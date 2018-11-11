@@ -6,12 +6,15 @@ const PREXIX = '$'
 
 const client = new Discord.Client();
 
+const queue = new Map();
+
 client.on('ready', () => console.log("ready!"));
 
 client.on('message', async msg => {
     if (msg.author.bot) return undefined;
     if (!msg.content.startsWith(PREXIX)) return undefined;
     const args = msg.content.split(' ');
+    const serverQueue = queue.get(msg.guild.id);
 
     if (msg.content.startsWith(`${PREXIX}play`)) {
         const voiceChannel = msg.member.voiceChannel;
@@ -24,14 +27,41 @@ client.on('message', async msg => {
             return msg.channel.send("Im muted");
         }
 
-        try {
-            var connection = await voiceChannel.join();
-        } catch(err){
-            console.log(err);
-            return msg.channel.send(`Error!: ${err}`);
+        const songInfo = await ytdl.getInfo(args[1]);
+        const song = {
+            title: songInfo.title,
+            url: songInfo.video_url
+        }
+        console.log(songInfo.baseUrl);
+        if (!serverQueue) {
+            const queueConstruct = {
+                textChannel: msg.channel,
+                voiceChnl: voiceChannel,
+                connection: null,
+                songs: [],
+                volume: .5,
+                playing: true
+            };
+            queue.set(msg.guild.id, queueConstruct);
+
+            queueConstruct.songs.push(song);
+
+            try {
+                var connection = await voiceChannel.join();
+                queueConstruct.connection = connection;
+                play(msg.guild, queueConstruct.songs[0]);
+            } catch(err){
+                console.log(err);
+                return msg.channel.send(`Error!: ${err}`);
+            }
+        } else {
+            serverQueue.songs.push(song);
+            msg.channel.send(`${song.title} added to queue`);
         }
 
-        const dispatcher = connection.playStream(ytdl(args[1])
+        return undefined;
+
+        /* const dispatcher = connection.playStream(ytdl(args[1])
             .on('end', () => {
                 console.log('song ended');
             })
@@ -39,18 +69,35 @@ client.on('message', async msg => {
                 console.error(error);
             }));
         
-            dispatcher.setVolumeLogarithmic(5 / 5);
+            dispatcher.setVolumeLogarithmic(5 / 5); */
 
-            if (msg.content.startsWith(`${PREXIX}vol`)) {
-                if(msg.content instanceof number){
-                    dispatcher.setVolumeLogarithmic(msg.content);
-                } else {
-                    msg.channel.send("Please enter a numeric value");
-                }
-                
-            }
+    } else if (msg.content.startsWith(`${PREXIX}stop`)) {
+        console.log("getting this?");
+        msg.voiceChannel.leave();
+        return undefined;
     }
 });
+
+
+play = (guild, song) => {
+    const serverQueue = queue.get(guild.id);
+
+    if (!song) {
+        serverQueue.voiceChannel.leave();
+        queue.delete(guild.id);
+        return;
+    }
+    const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
+        .on('end', () => {
+            console.log('song ended');
+            serverQueue.songs.shift();
+            play(guild, serverQueue.songs[0]);
+            msg.channel.send(`Now playing: ${song.title}`);
+        })
+        .on('error', error => {console.error(error);});
+        
+    dispatcher.setVolumeLogarithmic(5 / 5);
+}
 
 
 client.login(keys.token);

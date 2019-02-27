@@ -48,8 +48,12 @@ client.on('message', async msg => {
 
         searchYoutube(keys.youtubeApi, options)
             .then(res => {
+                console.log(res);
+                
                 const title = res.items[0].snippet.title;
                 const url = 'https://www.youtube.com/watch?v=' + res.items[0].id.videoId
+                console.log(url);
+                
             
                 const song = {
                     title: title,
@@ -115,8 +119,6 @@ play = (guild, song) => {
     const serverQueue = queue.get(guild.id);
     serverQueue.connection.then(x => {
         console.log(x.playStream(ytdl(song.url)))
-        
-
     })
     
 

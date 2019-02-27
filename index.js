@@ -2,6 +2,8 @@ const Discord = require('discord.js');
 const keys = require('./keys');
 const DM = require('discord-yt-player');
 const ytdl = require('ytdl-core');
+const searchYoutube = require('youtube-api-v3-search');
+const YoutubeSearch = require('./youtubeTest');
 const PREXIX = '$'
 
 const client = new Discord.Client();
@@ -17,6 +19,14 @@ client.on('message', async msg => {
     const serverQueue = queue.get(msg.guild.id);
 
     if (msg.content.startsWith(`${PREXIX}play`)) {
+        let arg = [];
+
+        for(let i = 0; i < args.length; i++) {
+            if (i > 0) {
+                arg.push(args[i])
+            }
+        }
+        
         const voiceChannel = msg.member.voiceChannel;
         if (!voiceChannel) return msg.channel.send("Not in a voice channel, can't play music");
         const permission = voiceChannel.permissionsFor(msg.client.user);
@@ -27,40 +37,61 @@ client.on('message', async msg => {
             return msg.channel.send("Im muted");
         }
 
-        const songInfo = await ytdl.getInfo(args[1]);
-        const song = {
+        const options = {
+            q: arg.join(' '),
+            part: 'snippet',
+            type: 'video'
+        }
+
+        let title = ''
+        let url = ''
+
+        searchYoutube(keys.youtubeApi, options)
+            .then(res => {
+                const title = res.items[0].snippet.title;
+                const url = 'https://www.youtube.com/watch?v=' + res.items[0].id.videoId
+            
+                const song = {
+                    title: title,
+                    url: url
+                }
+                if (!serverQueue) {
+                    const queueConstruct = {
+                        textChannel: msg.channel,
+                        voiceChnl: voiceChannel,
+                        connection: null,
+                        songs: [],
+                        volume: .5,
+                        playing: true
+                    };
+                    queue.set(msg.guild.id, queueConstruct);
+        
+                    queueConstruct.songs.push(song);
+        
+                    try {
+                        var connection = voiceChannel.join();
+                        queueConstruct.connection = connection;
+                        play(msg.guild, queueConstruct.songs[0]);
+                    } catch(err){
+                        console.log(err);
+                        queue.delete(msg.guild.id);
+                        return msg.channel.send(`Error!Triggered in if: ${err}`);
+                    }
+                } else {
+                    serverQueue.songs.push(song);
+                    msg.channel.send(`${song.title} added to queue`);
+                }
+        
+                return "playing";
+            })
+            .catch(e => console.log(e));
+            
+        
+        
+/*         const song = {
             title: songInfo.title,
             url: songInfo.video_url
-        }
-        console.log(songInfo.baseUrl);
-        if (!serverQueue) {
-            const queueConstruct = {
-                textChannel: msg.channel,
-                voiceChnl: voiceChannel,
-                connection: null,
-                songs: [],
-                volume: .5,
-                playing: true
-            };
-            queue.set(msg.guild.id, queueConstruct);
-
-            queueConstruct.songs.push(song);
-
-            try {
-                var connection = await voiceChannel.join();
-                queueConstruct.connection = connection;
-                play(msg.guild, queueConstruct.songs[0]);
-            } catch(err){
-                console.log(err);
-                queue.delete(msg.guild.id);
-                return msg.channel.send(`Error!: ${err}`);
-            }
-        } else {
-            serverQueue.songs.push(song);
-            msg.channel.send(`${song.title} added to queue`);
-        }
-
-        return "playing";
+        }  */
         
     } else if (msg.content.startsWith(`${PREXIX}stop`)) {
         if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
@@ -82,6 +113,12 @@ client.on('message', async msg => {
 
 play = (guild, song) => {
     const serverQueue = queue.get(guild.id);
+    serverQueue.connection.then(x => {
+        console.log(x.playStream(ytdl(song.url)))
+        
+
+    })
+    
 
     if (!song) {
         serverQueue.voiceChannel.leave();
@@ -102,7 +139,6 @@ play = (guild, song) => {
 
 /* skip = (guild, song) => {
     const serverQueue = queue.get(guild.id);
-
     if (!serverQueue.song[1]) {
         msg.channel.send("Add more songs to the queue");
     }

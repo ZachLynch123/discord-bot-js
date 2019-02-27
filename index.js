@@ -119,10 +119,10 @@ play = (guild, song) => {
     const serverQueue = queue.get(guild.id);
     serverQueue.connection.then(x => {
         console.log(x.playStream(ytdl(song.url)))
-    })
-    
 
-    if (!song) {
+        // put everything in this function in the .then part
+
+        if (!song) {
         serverQueue.voiceChannel.leave();
         queue.delete(guild.id);
         return;
@@ -137,6 +137,10 @@ play = (guild, song) => {
         .on('error', error => {console.error(error);});
         
     dispatcher.setVolumeLogarithmic(5 / 5);
+    })
+    
+
+    
 }
 
 /* skip = (guild, song) => {

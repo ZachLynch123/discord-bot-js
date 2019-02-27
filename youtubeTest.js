@@ -1,37 +1,28 @@
 const searchYoutube = require('youtube-api-v3-search');
 const keys = require('./keys');
 
-class YoutubeSearch {
-  constructor() {
-    this.id = 'id_1'
-  }
+let title = ''
+let videoId = ''
+
+
+module.exports = setOptions = (query) => {
   
+  const options = {
+    q: query,
+    part: 'snippet',
+    type: 'video'
+  }
+  searchYoutube(keys.youtubeApi, options)
+    .then(res => {      
+      title = res.items[0].snippet.title;
+      videoId = res.items[0].id.videoId;
 
-  set youtubeQuery(query) {
-    const options = {
-      q: query,
-      part: 'snippet',
-      type: 'video'
-    }
-  }
-
-  get youtubeSearchTitle() {
-    searchYoutube(keys.youtubeApi, options)
-    .then(res => {
-      this.title = res.items[0].snippet.title;
-      return title
+      module.exports.title = title;
+module.exports.videoId = videoId;
     })
-  }
-  get youtubeSearchVideoUrl() {
-    searchYoutube(keys.youtubeApi, options)
-    .then(res => {
-      this.videoId = res.items[0].id.videoId;
-      return videoId
-    })
-  }
+    .catch(e => console.log(e))
 }
 
-module.exports = YoutubeSearch;
 
 
 

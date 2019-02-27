@@ -43,50 +43,48 @@ client.on('message', async msg => {
             type: 'video'
         }
 
-        let title = ''
-        let url = ''
-
         searchYoutube(keys.youtubeApi, options)
-            .then(res => {
-                console.log(res);
-                
+            .then(res => {                
                 const title = res.items[0].snippet.title;
-                const url = 'https://www.youtube.com/watch?v=' + res.items[0].id.videoId
-                console.log(url);
-                
-            
+                const url = 'https://www.youtube.com/watch?v=' + res.items[0].id.videoId;
                 const song = {
                     title: title,
                     url: url
                 }
+
+
                 if (!serverQueue) {
-                    const queueConstruct = {
+                    const queueConstuct = {
                         textChannel: msg.channel,
-                        voiceChnl: voiceChannel,
+                        voiceChannel: voiceChannel,
                         connection: null,
                         songs: [],
-                        volume: .5,
+                        volume: 5,
                         playing: true
                     };
-                    queue.set(msg.guild.id, queueConstruct);
-        
-                    queueConstruct.songs.push(song);
-        
-                    try {
-                        var connection = voiceChannel.join();
-                        queueConstruct.connection = connection;
-                        play(msg.guild, queueConstruct.songs[0]);
-                    } catch(err){
-                        console.log(err);
-                        queue.delete(msg.guild.id);
-                        return msg.channel.send(`Error!Triggered in if: ${err}`);
-                    }
+                    queue.set(msg.guild.id, queueConstuct);
+
+                    queueConstuct.songs.push(song);
+
+                    let connect = voiceChannel.join();
+                    queueConstuct.connection = connect;
+                    play(msg.guild, queueConstuct.songs[0]);
+                    return msg.channel.send('initial serverQueue creatiobn')
                 } else {
                     serverQueue.songs.push(song);
-                    msg.channel.send(`${song.title} added to queue`);
+                    return msg.channel.send(`addon`)
                 }
-        
-                return "playing";
+                
+
+                connect.then(connection => {
+                    const stream = ytdl(song.url, { filter: 'audioonly' });
+                    const dispatcher = connection.playStream(stream, { seek: 0, volume: 1 })
+                    .on('end', () => {
+                        console.log('end');
+                    })
+                })
+                .catch(e => console.log(e))
+
             })
             .catch(e => console.log(e));
             
@@ -114,34 +112,60 @@ client.on('message', async msg => {
 
 });
 
-
 play = (guild, song) => {
     const serverQueue = queue.get(guild.id);
-    serverQueue.connection.then(x => {
-        console.log(x.playStream(ytdl(song.url)))
 
-        // put everything in this function in the .then part
-
-        if (!song) {
+    console.log(serverQueue.connection);
+    
+    if (!song) {
         serverQueue.voiceChannel.leave();
         queue.delete(guild.id);
         return;
     }
-    const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
+
+    serverQueue.connection.then(connect => {
+        const stream = ytdl(song.url, { filter: 'audioonly' });
+        const dispatcher = connect.playStream(stream, { seek: 0, volume: 1 })
         .on('end', () => {
-            console.log('song ended');
+            console.log('end');
             serverQueue.songs.shift();
             play(guild, serverQueue.songs[0]);
+        })
+    })
+    .catch(e => console.log(e))
+}
+
+
+/* play = (guild, song) => {
+    const serverQueue = queue.get(guild.id);
+    serverQueue.connection.then(x => {
+        
+
+        // put everything in this function in the .then part
+
+
+        if (!song) {
+        x.voiceChannel.leave();
+        queue.delete(guild.id);
+        return;
+    }
+    console.log(ytdl(song.url));
+    
+    const dispatcher = x.connection.playStream(ytdl(song.url))
+        .on('end', () => {
+            console.log('song ended');
+            x.songs.shift();
+            play(guild, x.songs[0]);
             msg.channel.send(`Now playing ${song.title}`);
         })
         .on('error', error => {console.error(error);});
         
     dispatcher.setVolumeLogarithmic(5 / 5);
     })
+    .catch(e => {console.log(e)}) */
     
 
     
-}
 
 /* skip = (guild, song) => {
     const serverQueue = queue.get(guild.id);

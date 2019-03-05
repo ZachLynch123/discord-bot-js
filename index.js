@@ -72,7 +72,7 @@ client.on('message', async msg => {
                     return msg.channel.send('initial serverQueue creatiobn')
                 } else {
                     serverQueue.songs.push(song);
-                    return msg.channel.send(`addon`)
+                    return msg.channel.send(`${song.title} added`)
                 }
                 
 
@@ -114,8 +114,6 @@ client.on('message', async msg => {
 
 play = (guild, song) => {
     const serverQueue = queue.get(guild.id);
-
-    console.log(serverQueue.connection);
     
     if (!song) {
         serverQueue.voiceChannel.leave();
@@ -136,47 +134,6 @@ play = (guild, song) => {
 }
 
 
-/* play = (guild, song) => {
-    const serverQueue = queue.get(guild.id);
-    serverQueue.connection.then(x => {
-        
-
-        // put everything in this function in the .then part
-
-
-        if (!song) {
-        x.voiceChannel.leave();
-        queue.delete(guild.id);
-        return;
-    }
-    console.log(ytdl(song.url));
-    
-    const dispatcher = x.connection.playStream(ytdl(song.url))
-        .on('end', () => {
-            console.log('song ended');
-            x.songs.shift();
-            play(guild, x.songs[0]);
-            msg.channel.send(`Now playing ${song.title}`);
-        })
-        .on('error', error => {console.error(error);});
-        
-    dispatcher.setVolumeLogarithmic(5 / 5);
-    })
-    .catch(e => {console.log(e)}) */
-    
-
-    
-
-/* skip = (guild, song) => {
-    const serverQueue = queue.get(guild.id);
-    if (!serverQueue.song[1]) {
-        msg.channel.send("Add more songs to the queue");
-    }
-    const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
-        .on('end', () => {
-            
-        });
-} */
 
 
 client.login(keys.token);

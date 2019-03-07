@@ -3,10 +3,11 @@ const keys = require('./keys');
 const DM = require('discord-yt-player');
 const ytdl = require('ytdl-core');
 const searchYoutube = require('youtube-api-v3-search');
-const YoutubeSearch = require('./youtubeTest');
+const https = require('https');
 const PREXIX = '$'
 
 const client = new Discord.Client();
+
 
 const queue = new Map();
 
@@ -74,16 +75,6 @@ client.on('message', async msg => {
                     serverQueue.songs.push(song);
                     return msg.channel.send(`${song.title} added`)
                 }
-                
-
-                connect.then(connection => {
-                    const stream = ytdl(song.url, { filter: 'audioonly' });
-                    const dispatcher = connection.playStream(stream, { seek: 0, volume: 1 })
-                    .on('end', () => {
-                        console.log('end');
-                    })
-                })
-                .catch(e => console.log(e))
 
             })
             .catch(e => console.log(e));
@@ -106,8 +97,43 @@ client.on('message', async msg => {
     else if (msg.content.startsWith(`${PREXIX}skip`)) {
         if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
         if (!serverQueue) return msg.channel.send("Nothing to skip");
-        serverQueue.connection.dispatcher.end();
+        serverQueue.songs.shift();
+        play(msg.guild, serverQueue.songs[0]);
         return "skip";
+    }
+    
+    else if (msg.content.startsWith(`${PREXIX}img`)) {
+        var options = {
+            'method': 'GET',
+            'hostname': 'api.imgur.com',
+            'path': '/3/gallery/hot/viral/week/1{{page}}?showViral=true&mature=false&album_previews=false',
+            'headers': {
+              'Authorization': `Client-ID ${keys.imgurId}`
+            }
+          };
+          
+          var req = https.request(options, function (res) {
+            var chunks = [];
+          
+            res.on("data", function (chunk) {
+              chunks.push(chunk);
+            });
+          
+            res.on("end", function (chunk) {
+              var body = Buffer.concat(chunks);
+              // const json = body.toString();
+              const json = JSON.parse(body);
+              console.log(json.data[0].link);
+              msg.channel.send(json.data[0].link)
+          
+            });
+          
+            res.on("error", function (error) {
+              console.error(error);
+            });
+          });
+          
+          req.end();
     }
 
 });
@@ -123,7 +149,7 @@ play = (guild, song) => {
 
     serverQueue.connection.then(connect => {
         const stream = ytdl(song.url, { filter: 'audioonly' });
-        const dispatcher = connect.playStream(stream, { seek: 0, volume: 1 })
+        const dispatcher = connect.playStream(stream, { seek: 0, volume: .5 })
         .on('end', () => {
             console.log('end');
             serverQueue.songs.shift();

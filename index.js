@@ -123,9 +123,14 @@ client.on('message', async msg => {
               var body = Buffer.concat(chunks);
               // const json = body.toString();
               const json = JSON.parse(body);
-              console.log(json.data[0].link);
-              msg.channel.send(json.data[0].link)
-          
+              let i = Math.floor(Math.random() * json.data.length)
+              console.log(json.data[i].images[0]);
+              if (json.data[i].images[0] !== undefined) {
+                msg.channel.send({files: [json.data[i].images[0].link]});
+              }
+              else{
+                  msg.channel.send('img not found. Try again');
+              }
             });
           
             res.on("error", function (error) {

@@ -98,8 +98,8 @@ client.on('message', async msg => {
         if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
         if (!serverQueue) return msg.channel.send("Nothing to skip");
         serverQueue.songs.shift();
+        console.log(serverQueue.songs);
         play(msg.guild, serverQueue.songs[0]);
-        return "skip";
     }
     
     else if (msg.content.startsWith(`${PREXIX}img`)) {
@@ -139,6 +139,9 @@ client.on('message', async msg => {
           });
           
           req.end();
+    }
+    else if (msg.content.startsWith(`${PREXIX}search`)) {
+
     }
 
 });

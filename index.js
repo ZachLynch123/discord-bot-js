@@ -100,6 +100,7 @@ client.on('message', async msg => {
         serverQueue.songs.shift();
         console.log(serverQueue.songs);
         play(msg.guild, serverQueue.songs[0]);
+        return msg.channel.send('song skipped');
     }
     
     else if (msg.content.startsWith(`${PREXIX}img`)) {
@@ -136,7 +137,8 @@ client.on('message', async msg => {
             res.on("error", function (error) {
               console.error(error);
             });
-          });
+          })
+          
           
           req.end();
     }

@@ -17,14 +17,15 @@ client.on('message', async msg => {
     if (msg.author.bot) return undefined;
     if (!msg.content.startsWith(PREXIX)) return undefined;
     const args = msg.content.split(' ');
-    const serverQueue = queue.get(msg.guild.id);
+    const serverQueue = queue.get(msg.guild.id);    
 
     if (msg.content.startsWith(`${PREXIX}play`)) {
         let arg = [];
 
         for(let i = 0; i < args.length; i++) {
             if (i > 0) {
-                arg.push(args[i])
+                arg.push(args[i]);
+                
             }
         }
         
@@ -45,8 +46,11 @@ client.on('message', async msg => {
         }
 
         searchYoutube(keys.youtubeApi, options)
-            .then(res => {                
+            .then(res => {
                 const title = res.items[0].snippet.title;
+                console.log();
+                
+                
                 const url = 'https://www.youtube.com/watch?v=' + res.items[0].id.videoId;
                 const song = {
                     title: title,
@@ -59,6 +63,7 @@ client.on('message', async msg => {
                         textChannel: msg.channel,
                         voiceChannel: voiceChannel,
                         connection: null,
+                        dispatch: null,
                         songs: [],
                         volume: 5,
                         playing: true
@@ -70,25 +75,19 @@ client.on('message', async msg => {
                     let connect = voiceChannel.join();
                     queueConstuct.connection = connect;
                     play(msg.guild, queueConstuct.songs[0]);
-                    return msg.channel.send('initial serverQueue creatiobn')
+                    return msg.channel.send(`${unescape(song.title)} added`);
                 } else {
                     serverQueue.songs.push(song);
-                    return msg.channel.send(`${song.title} added`)
+                    return msg.channel.send(`${song.title} added`);
                 }
 
             })
             .catch(e => console.log(e));
-            
-        
-        
-/*         const song = {
-            title: songInfo.title,
-            url: songInfo.video_url
-        }  */
+
         
     } else if (msg.content.startsWith(`${PREXIX}stop`)) {
         if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
-        if (!serverQueue) return msg.channel.send("Nothing to stop");
+        if (!serverQueue) return 'no server queue'
         serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
         return undefined;
@@ -97,9 +96,8 @@ client.on('message', async msg => {
     else if (msg.content.startsWith(`${PREXIX}skip`)) {
         if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
         if (!serverQueue) return msg.channel.send("Nothing to skip");
-        serverQueue.songs.shift();
-        console.log(serverQueue.songs);
-        play(msg.guild, serverQueue.songs[0]);
+        
+        skip(msg.guild.id, serverQueue.songs);
         return msg.channel.send('song skipped');
     }
     
@@ -145,6 +143,17 @@ client.on('message', async msg => {
     else if (msg.content.startsWith(`${PREXIX}search`)) {
 
     }
+    
+    else if (msg.content.startsWith(`${PREXIX}queue`)) {
+        if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
+        if (!serverQueue) return msg.channel.send("No songs in queue");
+        let songList = ''
+        for (var i = 0; i < serverQueue.songs.length; i++) {
+            songList += `${i + 1}. ${serverQueue.songs[i].title} \n`;
+        }
+        msg.channel.send(songList);
+        
+    }
 
 });
 
@@ -152,23 +161,27 @@ play = (guild, song) => {
     const serverQueue = queue.get(guild.id);
     
     if (!song) {
-        serverQueue.voiceChannel.leave();
         queue.delete(guild.id);
         return;
     }
 
     serverQueue.connection.then(connect => {
         const stream = ytdl(song.url, { filter: 'audioonly' });
-        const dispatcher = connect.playStream(stream, { seek: 0, volume: .5 })
+        const dispatcher = connect.playStream(stream, { seek: 0, volume: .4 })
         .on('end', () => {
             console.log('end');
             serverQueue.songs.shift();
             play(guild, serverQueue.songs[0]);
         })
+        
     })
-    .catch(e => console.log(e))
+    .catch(e => console.log(e));
 }
 
+skip = (guild, songs) => {
+    songs.shift();
+    play(guild, songs[0])
+}
 
 
 

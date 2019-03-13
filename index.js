@@ -85,7 +85,7 @@ client.on('message', async msg => {
             .catch(e => console.log(e));
 
         
-    } else if (msg.content.startsWith(`${PREXIX}stop`)) {
+    } /* else if (msg.content.startsWith(`${PREXIX}stop`)) {
         if (!msg.member.voiceChannel) return msg.channel.send("You are not in voice channel");
         if (!serverQueue) return 'no server queue'
         serverQueue.songs = [];
@@ -99,7 +99,7 @@ client.on('message', async msg => {
         
         skip(msg.guild.id, serverQueue.songs);
         return msg.channel.send('song skipped');
-    }
+    } */
     
     else if (msg.content.startsWith(`${PREXIX}img`)) {
         var options = {
